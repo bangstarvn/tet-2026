@@ -142,6 +142,31 @@ h1{
     .number{font-size: 2em;}
     #greeting h2{font-size:2em}
 }
+/* ===== ORBIT + FALL EFFECT ===== */
+.letter.orbit {
+    animation: orbit 3s linear forwards;
+}
+
+@keyframes orbit {
+    from {
+        transform:
+            translate(var(--x), var(--y))
+            rotate(0deg)
+            scale(1.4);
+    }
+    to {
+        transform:
+            translate(var(--x), var(--y))
+            rotate(360deg)
+            scale(1.4);
+    }
+}
+
+.letter.fall {
+    transition: transform 2.5s ease-in, opacity 2.5s ease-in;
+    opacity: 0;
+}
+
 </style>
 </head>
 
@@ -322,33 +347,55 @@ function startCelebration() {
 function explodeText() {
     const textString = "HAPPY NEW YEAR 2026";
     const box = document.getElementById("letters");
-    
-    // Xóa cũ nếu có
-    box.innerHTML = '';
+    box.innerHTML = "";
 
-    [...textString].forEach((char, i) => {
-        if (char === " ") return;
-        
+    const chars = [...textString].filter(c => c !== " ");
+    const total = chars.length;
+
+    const baseRadius = 260;
+    const angleOffset = -Math.PI / 2;
+
+    chars.forEach((char, index) => {
         const span = document.createElement("span");
         span.className = "letter";
         span.textContent = char;
-        
-        // Vị trí ngẫu nhiên xung quanh tâm
-        const angle = Math.random() * Math.PI * 2;
-        const radius = 200 + Math.random() * 300; // Bán kính nổ ra xa hơn
-        
-        // Màu sắc ngẫu nhiên cho chữ
-        span.style.color = `hsl(${Math.random() * 60 + 30}, 100%, 70%)`; // Tông vàng/cam
-        
+
+        const angle = (index / total) * Math.PI * 2 + angleOffset;
+        const radius = baseRadius;
+
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+
+        span.style.setProperty("--x", `${x}px`);
+        span.style.setProperty("--y", `${y}px`);
+
+        span.style.color = `hsl(${40 + Math.random() * 20},100%,65%)`;
+
         box.appendChild(span);
 
-        // Kích hoạt animation
+        // Bật hiển thị + đặt vị trí
         setTimeout(() => {
             span.style.opacity = 1;
-            span.style.transform = `translate(${Math.cos(angle) * radius}px, ${Math.sin(angle) * radius}px) scale(1.5) rotate(${Math.random()*30-15}deg)`;
-        }, 100 + i * 50); // Delay từng chữ cái
+            span.style.transform = `translate(${x}px, ${y}px) scale(1.4)`;
+            span.classList.add("orbit");
+        }, index * 60);
+
+        // Sau khi quay xong → rơi xuống
+        setTimeout(() => {
+            const fallY = y + 400 + Math.random() * 200;
+            span.classList.remove("orbit");
+            span.classList.add("fall");
+            span.style.transform =
+                `translate(${x + (Math.random()*100-50)}px, ${fallY}px) scale(0.8) rotate(${Math.random()*90-45}deg)`;
+        }, 3200);
     });
+
+    // Cleanup DOM
+    setTimeout(() => {
+        box.innerHTML = "";
+    }, 6500);
 }
+
 </script>
 </body>
 </html>
