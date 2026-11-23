@@ -63,6 +63,7 @@ function createDefaultState() {
 let currentPhone = null;
 let currentUserName = '';
 let isGuestMode = false;
+let guestDeductFromTotal = true; // Gạt quay thật / quay thử riêng trên máy khách
 let state = createDefaultState();
 
 // Firebase runtime handles
@@ -454,7 +455,7 @@ function pickWeightedByQtyFromMap(denomList, qtyMap) {
 }
 
 // Pure evaluation function so both local mode and Firebase atomic transaction share exact same rules
-function evaluatePick(targetState, forceRealSpin) {
+function evaluatePick(targetState, deductOverride) {
   const active = (targetState.activeDenominations || []).slice().map(Number).sort((a, b) => a - b);
   if (active.length === 0) {
     return { error: 'Chưa có mệnh giá lì xì nào được bật!' };
@@ -465,7 +466,7 @@ function evaluatePick(targetState, forceRealSpin) {
     return { error: 'Tất cả các mệnh giá đều đã hết số lượng! Hãy báo chủ quỹ bổ sung.' };
   }
 
-  const isReal = forceRealSpin || targetState.deductFromTotal;
+  const isReal = deductOverride !== undefined ? Boolean(deductOverride) : Boolean(targetState.deductFromTotal);
 
   if (isReal) {
     const affordable = withStock.filter((d) => d <= targetState.remainingBudget);
@@ -482,7 +483,7 @@ function evaluatePick(targetState, forceRealSpin) {
     return { amount: chosen, matchedDenom: chosen, isTrial: false };
   }
 
-  // Trial mode (host only)
+  // Trial mode (host or guest)
   const pool = targetState.remainingBudget > 0
     ? withStock.filter((d) => d <= targetState.remainingBudget)
     : withStock;
@@ -491,14 +492,20 @@ function evaluatePick(targetState, forceRealSpin) {
   return { amount: chosen, matchedDenom: chosen, isTrial: true };
 }
 
+function getEffectiveDeductFlag() {
+  return isGuestMode ? guestDeductFromTotal : state.deductFromTotal;
+}
+
 // Open a specific envelope index (0-based)
 function openEnvelope(envIdx) {
   if (isSpinning) return;
   const env = envelopes[envIdx];
   if (!env || env.opened) return;
 
-  if (isGuestMode && state.limitOneSpinPerGuest && hasGuestSpun(currentPhone)) {
-    alert('Bạn đã bóc lì xì trong phòng này rồi! Mỗi thiết bị chỉ được bóc 1 lượt.');
+  const isRealSpin = getEffectiveDeductFlag();
+
+  if (isGuestMode && isRealSpin && state.limitOneSpinPerGuest && hasGuestSpun(currentPhone)) {
+    alert('Bạn đã bóc lì xì thật trong phòng này rồi! Bạn vẫn có thể gạt sang Quay thử để chơi tiếp.');
     return;
   }
 
@@ -524,7 +531,7 @@ function openEnvelope(envIdx) {
 
     fbRoomRef.transaction((currentData) => {
       const s = normalizeStateObject(currentData || state);
-      const picked = evaluatePick(s, isGuestMode);
+      const picked = evaluatePick(s, isRealSpin);
       if (picked.error) {
         txError = picked.error;
         return; // abort transaction
@@ -575,7 +582,7 @@ function openEnvelope(envIdx) {
       env.opened = true;
       env.amount = txResult.amount;
       env.isTrial = txResult.isTrial;
-      if (isGuestMode) markGuestSpun(currentPhone);
+      if (isGuestMode && !txResult.isTrial) markGuestSpun(currentPhone);
       recipientInput.value = '';
 
       renderEnvelopes();
@@ -586,7 +593,7 @@ function openEnvelope(envIdx) {
   }
 
   // Offline / Local fallback
-  const picked = evaluatePick(state, isGuestMode);
+  const picked = evaluatePick(state, isRealSpin);
   if (picked.error) {
     alert(picked.error);
     return;
@@ -622,7 +629,7 @@ function openEnvelope(envIdx) {
   };
 
   state.history.unshift(record);
-  if (isGuestMode) markGuestSpun(currentPhone);
+  if (isGuestMode && !record.isTrial) markGuestSpun(currentPhone);
   recipientInput.value = '';
 
   saveState();
@@ -669,8 +676,10 @@ function autoSplitBudgetToQuantities() {
 function spinRandomEnvelope() {
   if (isSpinning) return;
 
-  if (isGuestMode && state.limitOneSpinPerGuest && hasGuestSpun(currentPhone)) {
-    alert('Bạn đã bóc lì xì trong phòng này rồi! Mỗi thiết bị chỉ được bóc 1 lượt.');
+  const isRealSpin = getEffectiveDeductFlag();
+
+  if (isGuestMode && isRealSpin && state.limitOneSpinPerGuest && hasGuestSpun(currentPhone)) {
+    alert('Bạn đã bóc lì xì thật trong phòng này rồi! Bạn vẫn có thể gạt sang Quay thử để chơi tiếp.');
     return;
   }
 
@@ -690,7 +699,7 @@ function spinRandomEnvelope() {
     availableIndices = envelopes.map((_, i) => i);
   }
 
-  const testPick = evaluatePick(state, isGuestMode);
+  const testPick = evaluatePick(state, isRealSpin);
   if (testPick.error) {
     alert(testPick.error);
     return;
@@ -853,16 +862,17 @@ function renderModeToggle() {
   const subtitle = document.getElementById('mode-subtitle');
   const banner = document.getElementById('trial-banner');
 
-  cb.checked = state.deductFromTotal;
-  if (isGuestMode || state.deductFromTotal) {
+  const isReal = getEffectiveDeductFlag();
+  cb.checked = isReal;
+  if (isReal) {
     wrap.classList.remove('trial-mode');
-    title.textContent = 'Trừ vào tổng tiền (Quay thật)';
+    title.textContent = isGuestMode ? 'Quay thật (Nhận lì xì)' : 'Trừ vào tổng tiền (Quay thật)';
     subtitle.textContent = 'Bỏ tích để chuyển sang lượt quay thử';
     banner.hidden = true;
   } else {
     wrap.classList.add('trial-mode');
     title.textContent = 'Chế độ Quay thử (Không trừ tiền)';
-    subtitle.textContent = 'Tích lại để trừ vào tổng tiền khi trúng';
+    subtitle.textContent = isGuestMode ? 'Tích lại để quay nhận lì xì thật' : 'Tích lại để trừ vào tổng tiền khi trúng';
     banner.hidden = false;
   }
 }
@@ -1305,10 +1315,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.getElementById('deduct-cb').addEventListener('change', (e) => {
-    state.deductFromTotal = e.target.checked;
-    saveState();
-    renderModeToggle();
-    renderDenominations();
+    if (isGuestMode) {
+      guestDeductFromTotal = e.target.checked;
+      renderModeToggle();
+    } else {
+      state.deductFromTotal = e.target.checked;
+      saveState();
+      renderModeToggle();
+      renderDenominations();
+    }
   });
 
   document.getElementById('spin-random-btn').addEventListener('click', spinRandomEnvelope);

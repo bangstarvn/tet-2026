@@ -177,7 +177,6 @@ body {
 
 /* Guest Mode Layout */
 body.guest-mode .config-panel,
-body.guest-mode #deduct-toggle-wrap,
 body.guest-mode #share-room-btn,
 body.guest-mode #switch-account-btn,
 body.guest-mode #logout-btn,
