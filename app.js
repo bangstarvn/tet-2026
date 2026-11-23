@@ -932,7 +932,7 @@ function renderHistory() {
           <div class="history-meta">
             <span>Bao #${item.envelopeIndex || '?'} &bull; ${item.time}</span>
             <span class="${item.isTrial ? 'badge-trial' : 'badge-real'}">
-              ${item.isTrial ? 'Quay thử' : item.amount === 0 ? 'Lời chúc' : 'Đã trừ tiền'}
+              ${item.isTrial ? 'Quay thử' : item.amount === 0 ? 'Lời chúc' : 'Đã lì xì'}
             </span>
             ${item.isPaid ? '<span class="badge-paid">Đã CK</span>' : ''}
           </div>
