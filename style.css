@@ -78,8 +78,9 @@ body {
 
 .lantern span {
   color: var(--gold-main);
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
 }
 
 @keyframes swing {
@@ -1056,8 +1057,8 @@ input[type="password"]:focus {
 .env-coin {
   position: relative;
   z-index: 2;
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fff099, #ffb700 65%, #b37d00);
   border: 2px solid #fff3b0;
@@ -1066,7 +1067,8 @@ input[type="password"]:focus {
   justify-content: center;
   color: #7a0909;
   font-weight: 900;
-  font-size: 1.35rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.4px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
 }
 
@@ -1554,14 +1556,15 @@ input[type="password"]:focus {
 }
 
 .seal-coin {
-  width: 64px;
-  height: 64px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fff6b3, #ffb700 70%, #996b00);
   border: 3px solid #fff;
   color: #7a0909;
-  font-size: 1.9rem;
+  font-size: 1.15rem;
   font-weight: 900;
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
   justify-content: center;

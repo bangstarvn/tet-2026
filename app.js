@@ -881,7 +881,7 @@ function renderEnvelopes() {
   const grid = document.getElementById('envelopes-grid');
   grid.innerHTML = '';
 
-  const symbols = ['福', '祿', '壽', '發', '財', '喜'];
+  const symbols = ['PHÚC', 'LỘC', 'THỌ', 'TÀI', 'AN', 'TẾT'];
 
   envelopes.forEach((env, idx) => {
     const card = document.createElement('div');
