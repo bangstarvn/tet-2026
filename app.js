@@ -5,15 +5,10 @@ const GUEST_SPUN_PREFIX = 'lixi_tet_guest_spun_';
 const SECRET_PASS = '2027';
 
 // Firebase Realtime Database config (Project: Tet2027)
+// Realtime Database only needs databaseURL — no apiKey needed in public frontend code
 const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyALBsjtIzpJk_L_mvYZe0ov4YcCpogtI5U',
-  authDomain: 'tet2027-1c101.firebaseapp.com',
   databaseURL: 'https://tet2027-1c101-default-rtdb.asia-southeast1.firebasedatabase.app',
-  projectId: 'tet2027-1c101',
-  storageBucket: 'tet2027-1c101.firebasestorage.app',
-  messagingSenderId: '951751063089',
-  appId: '1:951751063089:web:bbc3022cbfdf4d60c48710',
-  measurementId: 'G-6MKB6HFNV5'
+  projectId: 'tet2027-1c101'
 };
 
 const DEFAULT_DENOMINATIONS = [
