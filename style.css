@@ -1332,6 +1332,23 @@ input[type="password"]:focus {
   color: #86efac;
 }
 
+.btn-del-mini {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(255, 107, 107, 0.42);
+  color: #ffb3b3;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-del-mini:hover {
+  background: rgba(239, 68, 68, 0.45);
+  color: #fff;
+}
+
 .badge-paid {
   font-size: 0.68rem;
   padding: 1px 6px;

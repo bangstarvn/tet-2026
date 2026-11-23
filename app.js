@@ -943,11 +943,16 @@ function renderHistory() {
           <div class="history-amount">${item.amount === 0 ? '🧧 Lời chúc Tết' : '+' + formatVND(item.amount)}</div>
           ${!isGuestMode ? `<div class="history-after">Dư: ${formatSecretVND(item.remainingAfter)}</div>` : ''}
           ${
-            !isGuestMode && item.amount > 0
+            !isGuestMode
               ? `<div class="history-qr-row">
-                  <button type="button" class="btn-qr-mini ${item.isPaid ? 'paid' : ''}" data-qr-id="${item.id}">
-                    ${item.isPaid ? '✅ Đã CK / QR' : item.bankAccount ? '🏦 Quét QR (Có STK)' : '🏦 Quét QR'}
-                  </button>
+                  ${
+                    item.amount > 0
+                      ? `<button type="button" class="btn-qr-mini ${item.isPaid ? 'paid' : ''}" data-qr-id="${item.id}">
+                          ${item.isPaid ? '✅ Đã CK / QR' : item.bankAccount ? '🏦 Quét QR (Có STK)' : '🏦 Quét QR'}
+                        </button>`
+                      : ''
+                  }
+                  <button type="button" class="btn-del-mini" data-del-id="${item.id}" title="Xoá mục này">🗑</button>
                 </div>`
               : ''
           }
@@ -963,7 +968,37 @@ function renderHistory() {
         openQrModal(btn.dataset.qrId);
       });
     });
+
+    listEl.querySelectorAll('.btn-del-mini').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        deleteHistoryItem(btn.dataset.delId);
+      });
+    });
   }
+}
+
+function deleteHistoryItem(recordId) {
+  if (isGuestMode) return;
+  const idx = state.history.findIndex((h) => String(h.id) === String(recordId));
+  if (idx === -1) return;
+
+  const item = state.history[idx];
+  const label = item.amount === 0 ? 'Lời chúc Tết' : formatVND(item.amount);
+  if (!confirm(`Xoá lượt của "${item.recipient}" (${label})?`)) return;
+
+  if (!item.isTrial) {
+    const restoreBudget = confirm('Bạn có muốn hoàn lại số tiền & số lượng mệnh giá của lượt này về quỹ không?\n\n- OK: Hoàn lại vào quỹ\n- Cancel: Chỉ xoá dòng lịch sử');
+    if (restoreBudget) {
+      state.remainingBudget = Math.min(state.initialBudget, state.remainingBudget + item.amount);
+      if (item.matchedDenom !== null && item.matchedDenom !== undefined) {
+        setQty(item.matchedDenom, getQty(item.matchedDenom) + 1);
+      }
+    }
+  }
+
+  state.history.splice(idx, 1);
+  saveState();
+  renderAll();
 }
 
 // VietQR Modal Logic
