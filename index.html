@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lì Xì Tết - Hái Lộc Đầu Xuân</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <header class="app-header">
+    <div class="lantern lantern-left"><span>福</span></div>
+    <div class="header-title">
+      <h1>LÌ XÌ TẾT</h1>
+      <p>Khai Xuân Đắc Lộc &bull; Vạn Sự Như Ý</p>
+    </div>
+    <div class="lantern lantern-right"><span>祿</span></div>
+  </header>
+
+  <!-- Thanh tài khoản theo Số điện thoại -->
+  <div class="account-bar" id="account-bar" hidden>
+    <div class="account-info">
+      <span class="account-badge" id="account-role-label">📱 Tài khoản: <strong id="current-phone-display">---</strong></span>
+      <span class="account-name-tag" id="current-name-display"></span>
+      <span class="sync-badge" id="sync-status-badge" title="Trạng thái đồng bộ trực tuyến">⏳ Đang kết nối...</span>
+    </div>
+    <div class="account-actions">
+      <button id="share-room-btn" class="btn-sm btn-share">🔗 Chia sẻ phòng (QR)</button>
+      <button id="switch-account-btn" class="btn-sm">🔄 Đổi SĐT</button>
+      <button id="logout-btn" class="btn-sm btn-danger">🚪 Đăng xuất</button>
+    </div>
+  </div>
+
+  <!-- Màn hình đăng nhập bằng Số điện thoại -->
+  <div class="modal-backdrop auth-backdrop" id="auth-modal">
+    <div class="modal-card auth-modal-card">
+      <div class="modal-envelope-top">
+        <span class="seal-coin">福</span>
+      </div>
+      <div class="modal-body auth-body">
+        <h3>Đăng Nhập Quỹ Lì Xì</h3>
+        <p class="auth-desc">Mỗi số điện thoại có quỹ tiền, mệnh giá và lịch sử lì xì riêng biệt.</p>
+        <div class="auth-form">
+          <div class="qr-field">
+            <label for="auth-phone-input">Số điện thoại của bạn *</label>
+            <input type="tel" id="auth-phone-input" placeholder="VD: 0912345678" inputmode="tel" maxlength="15" />
+          </div>
+          <div class="qr-field">
+            <label for="auth-name-input">Tên hiển thị (tuỳ chọn)</label>
+            <input type="text" id="auth-name-input" placeholder="VD: Gia đình anh Minh..." maxlength="40" />
+          </div>
+          <button id="auth-submit-btn" class="btn btn-gold btn-lg">Vào Quỹ Lì Xì</button>
+        </div>
+
+        <div class="saved-accounts-wrap" id="saved-accounts-wrap" hidden>
+          <span class="saved-accounts-label">Tài khoản đã dùng trên máy này:</span>
+          <div class="saved-accounts-list" id="saved-accounts-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="container">
+    <!-- Cột trái: Cấu hình Quỹ & Mệnh giá -->
+    <section class="panel config-panel">
+      <div class="panel-header-row">
+        <h2>Quỹ Lì Xì</h2>
+        <button id="toggle-secret-btn" class="btn-sm btn-secret" title="Mở khoá hiển thị số dư & số lượng">
+          🔒 Hiện thông tin
+        </button>
+      </div>
+
+      <div class="secret-auth-bar" id="secret-auth-bar" hidden>
+        <input type="password" id="secret-pass-input" placeholder="Nhập mật khẩu..." />
+        <button id="secret-submit-btn" class="btn btn-gold btn-xs">Mở</button>
+      </div>
+
+      <div class="budget-stats">
+        <div class="stat-box remaining-box">
+          <span class="stat-label">Số dư còn lại</span>
+          <span class="stat-value" id="remaining-display">5.000.000 ₫</span>
+        </div>
+        <div class="stat-row">
+          <div class="stat-mini">
+            <span class="stat-label">Tổng quỹ ban đầu</span>
+            <span class="stat-value-sm" id="initial-display">5.000.000 ₫</span>
+          </div>
+          <div class="stat-mini">
+            <span class="stat-label">Đã lì xì (Thật)</span>
+            <span class="stat-value-sm" id="spent-display">0 ₫</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="budget-progress"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="budget-input">Nhập / Đặt lại Tổng Tiền (VNĐ)</label>
+        <div class="input-row">
+          <input type="text" id="budget-input" placeholder="VD: 5.000.000" value="5.000.000" inputmode="numeric" />
+          <button id="set-budget-btn" class="btn btn-gold">Cập nhật quỹ</button>
+        </div>
+        <div class="quick-budgets">
+          <button class="chip-btn" data-budget="500000">500k</button>
+          <button class="chip-btn" data-budget="1000000">1 Triệu</button>
+          <button class="chip-btn" data-budget="2000000">2 Triệu</button>
+          <button class="chip-btn" data-budget="5000000">5 Triệu</button>
+          <button class="chip-btn" data-budget="10000000">10 Triệu</button>
+        </div>
+      </div>
+
+      <hr class="divider" />
+
+      <div class="form-group">
+        <div class="label-row">
+          <label>Danh sách mệnh giá &amp; Số lượng</label>
+          <div class="denom-top-actions">
+            <button id="auto-split-btn" class="link-btn" title="Tự động chia tổng tiền thành số lượng ngẫu nhiên các mệnh giá đang bật">🎲 Tự chia từ quỹ</button>
+            <span>&bull;</span>
+            <button id="toggle-all-denom" class="link-btn">Chọn tất cả</button>
+          </div>
+        </div>
+        <p class="hint-text">Tích chọn mệnh giá và chỉnh số lượng bao (trừ số lượng khi quay thật):</p>
+
+        <div class="denom-table-wrap">
+          <div class="denom-table-head">
+            <span>Mệnh giá</span>
+            <span class="col-qty">Số lượng</span>
+            <span class="col-act"></span>
+          </div>
+          <div class="denom-list" id="denom-grid"></div>
+        </div>
+
+        <div class="input-row custom-denom-row">
+          <input type="text" id="custom-denom-input" placeholder="Thêm mệnh giá (VD: 68.000)" inputmode="numeric" />
+          <input type="number" id="custom-qty-input" class="qty-add-input" placeholder="SL" value="5" min="0" />
+          <button id="add-denom-btn" class="btn btn-outline">+ Thêm</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" id="allow-remainder-cb" checked />
+          <span>Tự động vét số dư cuối nếu không đủ mệnh giá nhỏ nhất</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Cột giữa: Bàn Túi Lì Xì -->
+    <section class="panel stage-panel">
+      <div class="stage-top-bar">
+        <div class="recipient-wrap">
+          <input type="text" id="recipient-input" placeholder="Tên người nhận (không bắt buộc)..." />
+        </div>
+
+        <label class="deduct-toggle" id="deduct-toggle-wrap">
+          <input type="checkbox" id="deduct-cb" checked />
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+          <div class="toggle-text">
+            <strong id="mode-title">Trừ vào tổng tiền</strong>
+            <small id="mode-subtitle">Bỏ tích để quay thử (không trừ quỹ)</small>
+          </div>
+        </label>
+      </div>
+
+      <!-- Khu vực nhập thông tin nhận tiền của Khách (chỉ hiện ở Guest Mode) -->
+      <div class="guest-bank-bar" id="guest-bank-bar" hidden>
+        <div class="guest-bank-title">🏦 Thông tin nhận chuyển khoản lì xì (tuỳ chọn — chủ quỹ sẽ quét QR chuyển ngay cho bạn):</div>
+        <div class="guest-bank-inputs">
+          <select id="guest-bank-select">
+            <option value="">-- Chọn ngân hàng --</option>
+            <option value="VCB">Vietcombank (VCB)</option>
+            <option value="TCB">Techcombank (TCB)</option>
+            <option value="MB">MB Bank (MB)</option>
+            <option value="BIDV">BIDV</option>
+            <option value="ICB">VietinBank (CTG)</option>
+            <option value="VBA">Agribank</option>
+            <option value="ACB">ACB</option>
+            <option value="VPB">VPBank</option>
+            <option value="TPB">TPBank</option>
+            <option value="STB">Sacombank</option>
+            <option value="VIB">VIB</option>
+            <option value="HDB">HDBank</option>
+            <option value="SHB">SHB</option>
+            <option value="OCB">OCB</option>
+            <option value="MSB">MSB</option>
+            <option value="LPB">LPBank</option>
+            <option value="EIB">Eximbank</option>
+            <option value="SEAB">SeABank</option>
+            <option value="CAKE">CAKE by VPBank</option>
+            <option value="TIMO">Timo</option>
+            <option value="SHBVN">Shinhan Bank</option>
+          </select>
+          <input type="text" id="guest-account-input" placeholder="Số tài khoản của bạn..." />
+        </div>
+      </div>
+
+      <div class="mode-banner" id="trial-banner" hidden>
+        ĐANG Ở CHẾ ĐỘ QUAY THỬ &mdash; Kết quả sẽ không trừ vào tổng tiền
+      </div>
+
+      <div class="envelopes-grid" id="envelopes-grid">
+        <!-- 12 túi lì xì render bằng JS -->
+      </div>
+
+      <div class="stage-actions">
+        <button id="spin-random-btn" class="btn btn-primary-spin">
+          🎲 QUAY NGẪU NHIÊN TÚI LÌ XÌ
+        </button>
+        <button id="shuffle-btn" class="btn btn-outline">
+          🔄 Trộn lại túi
+        </button>
+      </div>
+    </section>
+
+    <!-- Cột phải: Lịch sử -->
+    <section class="panel history-panel">
+      <div class="history-header">
+        <h2>Lịch Sử Mở Lì Xì</h2>
+        <div class="history-actions">
+          <button id="undo-btn" class="btn-sm" title="Hoàn tác lượt gần nhất">↩ Hoàn tác</button>
+          <button id="clear-history-btn" class="btn-sm btn-danger" title="Xoá toàn bộ lịch sử">🗑 Xoá</button>
+        </div>
+      </div>
+
+      <div class="history-filter">
+        <button class="filter-tab active" data-filter="all">Tất cả (<span id="count-all">0</span>)</button>
+        <button class="filter-tab" data-filter="real">Đã trừ tiền (<span id="count-real">0</span>)</button>
+        <button class="filter-tab" data-filter="trial">Quay thử (<span id="count-trial">0</span>)</button>
+      </div>
+
+      <div class="history-list" id="history-list">
+        <div class="empty-state">Chưa có lượt mở lì xì nào. Hãy chọn một phong bao may mắn!</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Kết quả mở bao lì xì -->
+  <div class="modal-backdrop" id="result-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-envelope-top">
+        <span class="seal-coin">發</span>
+      </div>
+      <div class="modal-body">
+        <span class="modal-badge" id="modal-badge">CHÍNH THỨC &bull; ĐÃ TRỪ QUỸ</span>
+        <h3 id="modal-recipient">Chúc Mừng Năm Mới!</h3>
+        <div class="modal-amount" id="modal-amount">100.000 ₫</div>
+        <p class="modal-wish" id="modal-wish">Tiền vào như nước sông Đà, tiền ra nhỏ giọt như cà phê phin!</p>
+        <div class="modal-remaining" id="modal-remaining">Số dư quỹ còn lại: 4.900.000 ₫</div>
+        <button id="close-modal-btn" class="btn btn-gold btn-lg">Nhận Lộc &amp; Tiếp Tục</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chuyển khoản / Quét mã VietQR -->
+  <div class="modal-backdrop" id="qr-modal" hidden>
+    <div class="modal-card qr-modal-card">
+      <div class="qr-modal-header">
+        <h3>🏦 Chuyển Khoản Lì Xì (VietQR)</h3>
+        <button id="close-qr-modal-btn" class="qr-close-btn" title="Đóng">&times;</button>
+      </div>
+
+      <div class="qr-modal-body">
+        <div class="qr-summary">
+          <div class="qr-summary-name" id="qr-recipient-label">Người nhận</div>
+          <div class="qr-summary-amount" id="qr-amount-label">100.000 ₫</div>
+        </div>
+
+        <div class="qr-form">
+          <div class="qr-field">
+            <label for="qr-bank-select">Ngân hàng thụ hưởng</label>
+            <select id="qr-bank-select">
+              <optgroup label="Ngân hàng phổ biến">
+                <option value="VCB">Vietcombank (VCB)</option>
+                <option value="TCB">Techcombank (TCB)</option>
+                <option value="MB">MB Bank (MB)</option>
+                <option value="BIDV">BIDV</option>
+                <option value="ICB">VietinBank (CTG)</option>
+                <option value="VBA">Agribank</option>
+                <option value="ACB">ACB</option>
+                <option value="VPB">VPBank</option>
+                <option value="TPB">TPBank</option>
+                <option value="STB">Sacombank</option>
+                <option value="VIB">VIB</option>
+                <option value="HDB">HDBank</option>
+                <option value="SHB">SHB</option>
+                <option value="OCB">OCB</option>
+                <option value="MSB">MSB</option>
+              </optgroup>
+              <optgroup label="Ngân hàng TMCP khác">
+                <option value="LPB">LPBank (Lộc Phát)</option>
+                <option value="EIB">Eximbank</option>
+                <option value="SEAB">SeABank</option>
+                <option value="NAB">Nam A Bank</option>
+                <option value="BAB">Bac A Bank</option>
+                <option value="ABB">ABBANK</option>
+                <option value="BVB">BVBank (Bản Việt)</option>
+                <option value="KLB">KienlongBank</option>
+                <option value="NCB">NCB (Quốc Dân)</option>
+                <option value="PGB">PGBank</option>
+                <option value="PVCB">PVcomBank</option>
+                <option value="SCB">SCB (Sài Gòn)</option>
+                <option value="SGICB">Saigonbank</option>
+                <option value="VAB">VietABank</option>
+                <option value="VIETBANK">VietBank</option>
+                <option value="CAKE">CAKE by VPBank</option>
+                <option value="UBANK">Ubank by VPBank</option>
+                <option value="TIMO">Timo by BVBank</option>
+                <option value="VNPTMONEY">VNPT Money</option>
+                <option value="VTLMONEY">Viettel Money</option>
+              </optgroup>
+              <optgroup label="Ngân hàng nước ngoài &amp; Liên doanh">
+                <option value="SHBVN">Shinhan Bank</option>
+                <option value="HSBC">HSBC Việt Nam</option>
+                <option value="SCVN">Standard Chartered</option>
+                <option value="WVN">Woori Bank</option>
+                <option value="UOB">UOB Việt Nam</option>
+                <option value="PBVN">Public Bank</option>
+                <option value="CIMB">CIMB Bank</option>
+                <option value="IVB">Indovina Bank (IVB)</option>
+                <option value="VRB">VRB (Việt - Nga)</option>
+                <option value="HLBVN">Hong Leong Bank</option>
+                <option value="KBHN">Kookmin Bank</option>
+                <option value="KEBHANAHCM">KEB Hana Bank</option>
+                <option value="DBS">DBS Bank</option>
+                <option value="IBK">IBK Bank</option>
+                <option value="CBB">CBBank</option>
+                <option value="GPB">GPBank</option>
+                <option value="OCEANBANK">OceanBank (MBV)</option>
+                <option value="COOPBANK">Co-opBank</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div class="qr-field-row">
+            <div class="qr-field">
+              <label for="qr-account-input">Số tài khoản</label>
+              <input type="text" id="qr-account-input" placeholder="Nhập STK..." />
+            </div>
+            <div class="qr-field">
+              <label for="qr-name-input">Tên chủ TK (tuỳ chọn)</label>
+              <input type="text" id="qr-name-input" placeholder="VD: NGUYEN VAN A" />
+            </div>
+          </div>
+
+          <div class="qr-field">
+            <label for="qr-memo-input">Nội dung chuyển khoản</label>
+            <input type="text" id="qr-memo-input" placeholder="Li xi Tet..." />
+          </div>
+
+          <button id="generate-qr-btn" class="btn btn-gold btn-full">Tạo Mã QR Chuyển Khoản</button>
+        </div>
+
+        <div class="qr-preview-box" id="qr-preview-box" hidden>
+          <img id="qr-image" alt="Mã VietQR chuyển khoản lì xì" />
+          <p class="qr-hint">Mở app ngân hàng bất kỳ và quét mã trên (đã điền sẵn số tiền &amp; nội dung).</p>
+          <div class="qr-preview-actions">
+            <button id="copy-stk-btn" class="btn btn-outline btn-xs">📋 Copy STK</button>
+            <button id="mark-paid-btn" class="btn btn-paid btn-xs">✅ Đánh dấu đã CK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chia sẻ phòng cho khách tự bóc -->
+  <div class="modal-backdrop" id="share-modal" hidden>
+    <div class="modal-card qr-modal-card">
+      <div class="qr-modal-header">
+        <h3>🔗 Chia Sẻ Phòng Lì Xì (Realtime)</h3>
+        <button id="close-share-modal-btn" class="qr-close-btn" title="Đóng">&times;</button>
+      </div>
+      <div class="qr-modal-body">
+        <p class="share-desc">Gửi link hoặc chiếu mã QR bên dưới cho khách quét bằng điện thoại để tự bóc bao lì xì (ẩn quỹ, trừ tiền trực tuyến realtime).</p>
+
+        <div class="share-option-box">
+          <label class="checkbox-label">
+            <input type="checkbox" id="limit-one-spin-cb" />
+            <span>Giới hạn mỗi thiết bị khách chỉ được bóc <strong>1 lượt</strong></span>
+          </label>
+        </div>
+
+        <div class="qr-preview-box share-qr-box">
+          <img id="share-qr-image" alt="QR Mời Vào Phòng Lì Xì" />
+          <div class="share-link-row">
+            <input type="text" id="share-link-input" readonly />
+            <button id="copy-share-link-btn" class="btn btn-gold btn-xs">📋 Copy</button>
+          </div>
+          <p class="qr-hint" id="share-local-warning" hidden>
+            ⚠️ Bạn đang mở file trên máy (<code>file://</code>). Hãy đẩy lên <strong>GitHub Pages</strong> để điện thoại khác quét QR truy cập được!
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Realtime Database SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
