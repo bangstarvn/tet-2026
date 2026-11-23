@@ -931,6 +931,8 @@ function renderHistory() {
           <span class="history-recipient">${escapeHTML(item.recipient)}</span>
           <div class="history-meta">
             <span>Bao #${item.envelopeIndex || '?'} &bull; ${item.time}</span>
+          </div>
+          <div class="history-badges">
             <span class="${item.isTrial ? 'badge-trial' : 'badge-real'}">
               ${item.isTrial ? 'Quay thử' : item.amount === 0 ? 'Lời chúc' : 'Đã lì xì'}
             </span>

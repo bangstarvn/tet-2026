@@ -187,6 +187,10 @@ body.guest-mode #shuffle-btn {
   display: none !important;
 }
 
+body.guest-mode .account-bar {
+  max-width: 1120px;
+}
+
 body.guest-mode .container {
   max-width: 1120px;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -1243,6 +1247,14 @@ input[type="password"]:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 5px;
+}
+
+.history-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
 }
 
 .badge-real,
